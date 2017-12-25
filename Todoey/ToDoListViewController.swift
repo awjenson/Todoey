@@ -12,8 +12,16 @@ class ToDoListViewController: UITableViewController {
 
     var itemArray = ["Find Mike", "Buy Eggos", "Destroy Demogorgon"]
 
+    // create an object
+    let defaults = UserDefaults.standard
+
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        // display data stored in UserDefaults
+        if let items = defaults.array(forKey: "TodoListArray") as? [String] {
+            itemArray = items
+        }
 
     }
 
@@ -66,7 +74,9 @@ class ToDoListViewController: UITableViewController {
             // What will happen once the user clicks the add item button on the UIAlert
 
             self.itemArray.append(textField.text!)
-
+            // save updated itemArray to UserDefaults
+            // UserDefaults stores data in info.plist which uses key value pairs
+            self.defaults.set(self.itemArray, forKey: "TodoListArray")
             self.tableView.reloadData()
         }
 
