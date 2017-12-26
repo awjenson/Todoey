@@ -9,10 +9,9 @@
 import Foundation
 
 // title and done/notDone Boolean
-
-class Item {
+// Conform class to the protocols of encodable and decodable
+class Item: Codable {
 
     var title: String = ""
     var done: Bool = false
-
 }

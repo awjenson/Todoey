@@ -12,31 +12,17 @@ class ToDoListViewController: UITableViewController {
 
     var itemArray = [Item]()
 
-    // create an object
-    let defaults = UserDefaults.standard
+    // use NSCoder (Coder) to encode and decode our data to a pre-specified a file path and our code converted our array of items (var itemArray = [Item]()) into a plist file that we can save and retrieve from.
+    // set as global constant to use within other methods or do-try-catch statements
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("Items.plist")
 
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        // create data from model
-        // Our new item is a new object of the type Item
-        let newItem = Item()
-        newItem.title = "Find Mike"
-        itemArray.append(newItem)
+        print(dataFilePath)
 
-        let newItem2 = Item()
-        newItem2.title = "Buy Eggos"
-        itemArray.append(newItem2)
-
-        let newItem3 = Item()
-        newItem3.title = "Destry Demogorgon"
-        itemArray.append(newItem3)
-
-        // display data stored in UserDefaults
-        if let items = defaults.array(forKey: "TodoListArray") as? [Item] {
-            // if successful, then set our itemArray to equal items
-            itemArray = items
-        }
+        // load up our "Items.plist"
+        loadItems()
 
     }
 
@@ -76,8 +62,7 @@ class ToDoListViewController: UITableViewController {
         // set the done property of the selected item to the opposite of whatever it was prior to selecting the cell using !
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
 
-        // force the table view to call its data source methods again
-        tableView.reloadData()
+        saveItems()
 
         tableView.deselectRow(at: indexPath, animated: true)
     }
@@ -102,11 +87,8 @@ class ToDoListViewController: UITableViewController {
             // only append newItem to our itemArray
             self.itemArray.append(newItem)
 
-            // save updated itemArray to UserDefaults
-            // UserDefaults stores data in info.plist which uses key value pairs
-            self.defaults.set(self.itemArray, forKey: "TodoListArray")
-
-            self.tableView.reloadData()
+            // add to our "Items.plist"
+            self.saveItems()
         }
 
         alert.addTextField { (alertTextField) in
@@ -119,6 +101,40 @@ class ToDoListViewController: UITableViewController {
 
         // Display UIAlertController
         present(alert, animated: true, completion: nil)
+    }
+
+    func saveItems() {
+
+        // encode the data fro our app into our plist
+        // encoder is going to be a new object of type PropertyListEncoder
+        // initalize it with ()
+        let encoder = PropertyListEncoder()
+
+        do {
+            // encode our data
+            let data = try encoder.encode(itemArray)
+            // write our data to the data file path
+            try data.write(to: dataFilePath!)
+        } catch {
+            print("error with encorder \(error)")
+        }
+        self.tableView.reloadData()
+    }
+
+    func loadItems() {
+
+        // decode from our plist to diplay in our app
+        // Tap into our data and set it equal to contentsOf: URL
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            // Decode our data from the "Items.plist" to display in app
+            let decoder = PropertyListDecoder()
+            // add .self to [Item] and because we are not specifying its data type, we need to use .self
+            do {
+                itemArray = try decoder.decode([Item].self, from: data)
+            } catch {
+                print("decode error: \(error)")
+            }
+        }
     }
 
 
