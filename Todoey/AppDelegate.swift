@@ -7,6 +7,8 @@
 //
 
 import UIKit
+import CoreData
+
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -42,6 +44,60 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func applicationWillTerminate(_ application: UIApplication) {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+        // Saves changes in the application's managed object context before the application terminates.
+        self.saveContext()
+    }
+
+    // MARK: - Core Data stack
+
+    // When we create a variable and declare it as lazy, then it only gets loaded up with a value at the time point when it is needed. i.e. when we try to use the variable. This saves on memory.
+    // PersistentContainer is where we are going to store all of our data in a SQLite database.
+    // For this project 'container' will be a SQLite Database
+    lazy var persistentContainer: NSPersistentContainer = {
+        // the perstanceContainer, called 'container', is the data base that we will be saving to and it is a SQLite database.
+        /*
+         The persistent container for the application. This implementation
+         creates and returns a container, having loaded the store for the
+         application to it. This property is optional since there are legitimate
+         error conditions that could cause the creation of the store to fail.
+         */
+        let container = NSPersistentContainer(name: "DataModel")
+        container.loadPersistentStores(completionHandler: { (storeDescription, error) in
+            // Log if there were any errors
+            if let error = error as NSError? {
+                // Replace this implementation with code to handle the error appropriately.
+                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
+
+                /*
+                 Typical reasons for an error here include:
+                 * The parent directory does not exist, cannot be created, or disallows writing.
+                 * The persistent store is not accessible, due to permissions or data protection when the device is locked.
+                 * The device is out of space.
+                 * The store could not be migrated to the current model version.
+                 Check the error message to determine what the actual problem was.
+                 */
+                fatalError("Unresolved error \(error), \(error.userInfo)")
+            }
+        })
+        // If there were no errors then we are going to return the container that we loaded up and we're going to set it as the value this lazy variable called 'persistentContainer' and we will be able to access it inside other classes in order to persist and save our data into our SQLite database.
+        return container
+    }()
+
+    // MARK: - Core Data Saving support
+
+    func saveContext () {
+        // the 'context' is an area where you can change and update your data so you can undo and redo until your happy with your data. And then you can save the data that is in your context (temp area) to the 'container' which is for permenent storage.
+        let context = persistentContainer.viewContext
+        if context.hasChanges {
+            do {
+                try context.save()
+            } catch {
+                // Replace this implementation with code to handle the error appropriately.
+                // fatalError() causes the application to generate a crash log and terminate. You should not use this function in a shipping application, although it may be useful during development.
+                let nserror = error as NSError
+                fatalError("Unresolved error \(nserror), \(nserror.userInfo)")
+            }
+        }
     }
 
 
