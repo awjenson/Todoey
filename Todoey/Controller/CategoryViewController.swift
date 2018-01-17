@@ -22,7 +22,6 @@ class CategoryViewController: UITableViewController {
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
 
         loadCategories()
-
     }
 
     // MARK: - Data Manipulation Methods
@@ -55,7 +54,6 @@ class CategoryViewController: UITableViewController {
         }
 
         tableView.reloadData()
-
     }
 
     // MARK: - Add New Categories
@@ -67,7 +65,6 @@ class CategoryViewController: UITableViewController {
         let alert = UIAlertController(title: "Add New Category", message: "", preferredStyle: .alert)
 
         let action = UIAlertAction(title: "Add", style: .default) { (action) in
-
 
             // Create a new NSManagedObject, newCategory
             // reference global variable 'context' insdie a closure with 'self'
@@ -134,11 +131,4 @@ extension CategoryViewController {
         }
     }
 
-
-
-
-
-
 }
-
-

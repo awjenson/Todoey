@@ -48,7 +48,6 @@ class ToDoListViewController: UITableViewController {
         // searchBar: Step 3/4 - add delegate to viewDidLoad
         // searchBar delegate
         searchBar.delegate = self
-
     }
 
     // MARK: - DataSource
@@ -81,10 +80,6 @@ class ToDoListViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         // Tells the delegate which is this class, ToDoListViewController
 
-//        // Deleting a row (order of code is important)
-//        context.delete(itemArray[indexPath.row])
-//        itemArray.remove(at: indexPath.row)
-
         // set the done property of the selected item to the opposite of whatever it was prior to selecting the cell using !
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
 
@@ -92,9 +87,6 @@ class ToDoListViewController: UITableViewController {
 
         tableView.deselectRow(at: indexPath, animated: true)
     }
-
-
-
 
 
     // MARK: - IBAction
@@ -108,8 +100,6 @@ class ToDoListViewController: UITableViewController {
 
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
             // What will happen once the user clicks the add item button on the UIAlert
-
-
 
             // create a new item that is of the class Item
             // We can specify the context of where this item is going to exist (which is going to be the viewContext of the persistentContainer in the appDelegate).
@@ -184,7 +174,6 @@ class ToDoListViewController: UITableViewController {
             request.predicate = categoryPredicate
         }
 
-
         // our app has to speak to the context before we can speak to our persistantContainer
         // we want to fetch our current request, which is basically a blank request that returns everything in our persistantContainer, it can throw an error so put it inside a do-try-catch statement.
         do {
@@ -198,7 +187,6 @@ class ToDoListViewController: UITableViewController {
 
         tableView.reloadData()
     }
-
 
 }
 
@@ -230,7 +218,6 @@ extension ToDoListViewController: UISearchBarDelegate {
         // pass request into the loadItems method as an NSFetchRequest<Item>
         // run our request and fetch results
         loadItems(with: request, predicate: predicate)
-
     }
 
     func searchBar(_ searchBar: UISearchBar, textDidChange searchText: String) {
@@ -242,14 +229,8 @@ extension ToDoListViewController: UISearchBarDelegate {
                 // tell searchBar to resignFirstResponder
                 searchBar.resignFirstResponder()
             }
-
         }
     }
 
-
-
-
 }
-
-
 
