@@ -8,8 +8,11 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
-class CategoryViewController: UITableViewController {
+// Inherit from Parent Class and remove all mention of SwipeCellKit
+
+class CategoryViewController: SwipeTableViewController {
 
     // MARK: - Properties
 
@@ -24,6 +27,11 @@ class CategoryViewController: UITableViewController {
         super.viewDidLoad()
 
         loadCategories()
+
+        // Remove cell line seperators
+        tableView.separatorStyle = .none
+
+        
     }
 
     // MARK: - Data Manipulation Methods
@@ -49,11 +57,27 @@ class CategoryViewController: UITableViewController {
     // Method with Default Value listed inside loadItems(): = Item.fetchRequest() in case not parameter passed in (see viewDidLoad).
     func loadCategories() {
 
-        // We specify the type (Category.self), this will pull out all of items inside Realm that are of Category objects. The data type of the objects that we get back are of type Results which is a container type that comes from RealmSwift.
+        // We specify the type (Category.self), this will pull out ALL of items (objects) inside Realm that are of Category objects. The data type of the objects that we get back are of type Results which is a container type that comes from RealmSwift.
         categories = realm.objects(Category.self)
 
         // Call all data source methods to update table view
         tableView.reloadData()
+    }
+
+    // MARK: - Delete Data From Swipe
+
+    override func updateModel(at indexPath: IndexPath) {
+
+        // Because 'categories' is optional, we need to safely unwrap it.
+        if let categoryForDeletion = self.categories?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    self.realm.delete(categoryForDeletion)
+                }
+            } catch {
+                print("Error deleting category, \(error)")
+            }
+        }
     }
 
     // MARK: - Add New Categories
@@ -61,6 +85,7 @@ class CategoryViewController: UITableViewController {
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
 
         var textField = UITextField()
+
 
         let alert = UIAlertController(title: "Add New Category", message: "", preferredStyle: .alert)
 
@@ -72,6 +97,9 @@ class CategoryViewController: UITableViewController {
 
             // setup newCategory with whatever the user input in the textField
             newCategory.name = textField.text!
+
+            // convert randomFlat color to a String (with .hexValue())
+            newCategory.color = UIColor.randomFlat.hexValue()
 
             // save to Realm database
             self.save(category: newCategory)
@@ -93,20 +121,35 @@ class CategoryViewController: UITableViewController {
 }
 
 // MARK: - TableView Extension
+
 extension CategoryViewController {
 
     // MARK: - TableView DataSource Methods
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         // ?? Nil Coalescing Operator - If categories is not nil then return its count. If categories is nil then use 1.
         return categories?.count ?? 1
-
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
 
-        // .attribute of Entity, use the 'name' property to fill up the textLabel's .text property
-        cell.textLabel?.text = categories?[indexPath.row].name ?? "No Categories Added Yet"
+        // Setup Cell
+        // Access the super class with 'super'. This will access the cell created inside the super class (a SwipeTableViewCell). It accesses the cell at the current indexPath.
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
+
+        // Modify Cell
+        // Take the cell and add some more things to it.
+        if let category = categories?[indexPath.row] {
+
+            // .attribute of Entity, use the 'name' property to fill up the textLabel's .text property
+            cell.textLabel?.text = category.name
+
+            guard let categoryColor = UIColor(hexString: category.color) else { fatalError("cellForRowAt") }
+
+                // Random color from ChameleonFramework
+                cell.backgroundColor = categoryColor
+                cell.textLabel?.textColor = ContrastColorOf(categoryColor, returnFlat: true)
+        }
+
         return cell
     }
 
@@ -132,3 +175,5 @@ extension CategoryViewController {
     }
 
 }
+
+

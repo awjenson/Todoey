@@ -13,6 +13,10 @@ class Category: Object {
 
     // When creating properties using Realm, you need to add "@objc dynamic"
     @objc dynamic var name: String = ""
+    @objc dynamic var color: String = ""
+
+
+
 
     // Forward relationship, each Category has a list of Items
     // Realm uses List is like a Swift Array [], we create items property and it will hold a List of Item objects and we initalize it as an empty List

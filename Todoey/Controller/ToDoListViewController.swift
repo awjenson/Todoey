@@ -8,9 +8,10 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
 // searchBar: Step 1/4 - add delegate to class (see extension)
-class ToDoListViewController: UITableViewController {
+class ToDoListViewController: SwipeTableViewController {
 
     // MARK: - IBOutlets
 
@@ -38,16 +39,57 @@ class ToDoListViewController: UITableViewController {
         }
     }
 
+
     // MARK: - Lifecycle
+
+    // viewDidLoad gets called before the Navigation Controller gets called
     override func viewDidLoad() {
         super.viewDidLoad()
 
         // We want to get a path of where our current data is being stored.
         print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
 
-        // searchBar: Step 3/4 - add delegate to viewDidLoad
-        // searchBar delegate
-//        searchBar.delegate = self
+        tableView.separatorStyle = .none
+
+
+
+    }
+
+    // viewDidLoad gets called before the Navigation Controller gets called
+    override func viewWillAppear(_ animated: Bool) {
+
+        // When code is not inside an if-let block, then it is safer to use a ? (rather than a !).
+        title = selectedCategory?.name
+
+        guard let colorHex = selectedCategory?.color else { fatalError("viewWillAppear: colorHex")}
+
+        updateNavBar(withHexCode: "1D9BF6")
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        // don't carry over colors, return back to original color
+
+        updateNavBar(withHexCode: "1D9BF6")
+    }
+
+    // MARK: - Nav Bar Setup Methods
+
+    func updateNavBar(withHexCode colorHexCode: String) {
+
+        guard let navBar = navigationController?.navigationBar else {
+            fatalError("Navigation controller does not exist.")
+        }
+
+        guard let navBarColor = UIColor(hexString: colorHexCode) else { fatalError("viewWillAppear: navBarColor")}
+
+        navBar.barTintColor = navBarColor
+
+        // ConstrastColorOf requires a non-optional type UIColor.
+        navBar.tintColor = ContrastColorOf(navBarColor, returnFlat: true)
+
+        navBar.largeTitleTextAttributes = [NSAttributedStringKey.foregroundColor: ContrastColorOf(navBarColor, returnFlat: true)]
+
+        searchBar.barTintColor = navBarColor
     }
 
     // MARK: - DataSource
@@ -57,7 +99,9 @@ class ToDoListViewController: UITableViewController {
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
+
+        // link to Super Class's cell
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
 
         // Optional binding (if let) for todoItems
         // reduce clutter of repeating itemArray[indexPath.row]
@@ -66,6 +110,18 @@ class ToDoListViewController: UITableViewController {
             // itemArray[indexPath.row] is going to return an item object
             // We want to tap into its title property in order to display the 'title' of each object
             cell.textLabel?.text = item.title
+
+            // currently on row 5
+            // there's a total of 10 items in todoItems
+            // OK to Force Unwrap todoItems because we checked if todoItems is not nil above and it will only enter this block if not nil.
+            if let color = UIColor(hexString: selectedCategory!.color)?.darken(byPercentage: CGFloat(indexPath.row) / CGFloat(todoItems!.count)) {
+
+                // .darken returns an optional
+                cell.backgroundColor = color
+                // change contrasting color text
+                cell.textLabel?.textColor = ContrastColorOf(color, returnFlat: true)
+            }
+
 
             // use ternary operator to cut down code
             // value = condition ? valueIfTrue : valueIfFalse
@@ -105,6 +161,8 @@ class ToDoListViewController: UITableViewController {
 
         tableView.deselectRow(at: indexPath, animated: true)
     }
+
+
 
 
     // MARK: - IBAction
@@ -183,6 +241,23 @@ class ToDoListViewController: UITableViewController {
         todoItems = selectedCategory?.items.sorted(byKeyPath: "title", ascending: true)
 
         tableView.reloadData()
+    }
+
+    // MARK: - Delete Data From Swipe
+
+    // Method created in Super Class. 
+    override func updateModel(at indexPath: IndexPath) {
+
+        // Because 'categories' is optional, we need to safely unwrap it.
+        if let itemForDeletion = self.todoItems?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    self.realm.delete(itemForDeletion)
+                }
+            } catch {
+                print("Error deleting item, \(error)")
+            }
+        }
     }
 
 }
