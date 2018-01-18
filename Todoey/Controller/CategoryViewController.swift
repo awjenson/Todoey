@@ -7,19 +7,21 @@
 //
 
 import UIKit
-import CoreData
+import RealmSwift
 
 class CategoryViewController: UITableViewController {
 
     // MARK: - Properties
 
-    var categoryArray = [Category]()    // initialize as an empty array
-    let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
+    // the reason why this inialization could throw an error is that the first time you create a new realm instance it can fail if your resources are contstained, but this can only happen the first time a realm instance is created on a give thread.
+    // A collection of Results of Category objects
+    let realm = try! Realm()
+
+    // When using Realm, the data type of the objects that we get back are of type Results which is an auto-updating container type that comes from RealmSwift.
+    var categories: Results<Category>?
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        print(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask))
 
         loadCategories()
     }
@@ -27,10 +29,13 @@ class CategoryViewController: UITableViewController {
     // MARK: - Data Manipulation Methods
 
     // Save Data
-    func saveCategories() {
+    // Pass in the new category that we created
+    func save(category: Category) {
         do {
-            // try to commit whatever is in current context
-            try context.save()
+            // try to commit changes to Realm
+            try realm.write {
+                realm.add(category)
+            }
         } catch {
             print("saveCategories(): Error saving context \(error)")
         }
@@ -44,15 +49,10 @@ class CategoryViewController: UITableViewController {
     // Method with Default Value listed inside loadItems(): = Item.fetchRequest() in case not parameter passed in (see viewDidLoad).
     func loadCategories() {
 
-        let request: NSFetchRequest<Category> = Category.fetchRequest()
+        // We specify the type (Category.self), this will pull out all of items inside Realm that are of Category objects. The data type of the objects that we get back are of type Results which is a container type that comes from RealmSwift.
+        categories = realm.objects(Category.self)
 
-        do {
-            // If the fetchRequest is successful, then save the data to the categoryArray property
-            categoryArray = try context.fetch(request)
-        } catch {
-            print("Error fetching data from context \(error)")
-        }
-
+        // Call all data source methods to update table view
         tableView.reloadData()
     }
 
@@ -64,21 +64,17 @@ class CategoryViewController: UITableViewController {
 
         let alert = UIAlertController(title: "Add New Category", message: "", preferredStyle: .alert)
 
+        // new data (Category) gets created when we tap the "Add" button.
         let action = UIAlertAction(title: "Add", style: .default) { (action) in
 
-            // Create a new NSManagedObject, newCategory
-            // reference global variable 'context' insdie a closure with 'self'
-            let newCategory = Category(context: self.context)
+            // Create a new Category object
+            let newCategory = Category()
 
             // setup newCategory with whatever the user input in the textField
             newCategory.name = textField.text!
 
-            // append newCategory to categoryArray
-            self.categoryArray.append(newCategory)
-            print("categoryArray: \(self.categoryArray)")
-
-            // save to data model
-            self.saveCategories()
+            // save to Realm database
+            self.save(category: newCategory)
         }
 
         // add the button to the UIAlert
@@ -101,14 +97,16 @@ extension CategoryViewController {
 
     // MARK: - TableView DataSource Methods
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return categoryArray.count
+        // ?? Nil Coalescing Operator - If categories is not nil then return its count. If categories is nil then use 1.
+        return categories?.count ?? 1
+
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
 
-        // .attribute of Entity
-        cell.textLabel?.text = categoryArray[indexPath.row].name
+        // .attribute of Entity, use the 'name' property to fill up the textLabel's .text property
+        cell.textLabel?.text = categories?[indexPath.row].name ?? "No Categories Added Yet"
         return cell
     }
 
@@ -121,13 +119,15 @@ extension CategoryViewController {
     }
 
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+
+        // create a new instance of ToDoListViewController
         let destinationVC = segue.destination as! ToDoListViewController
 
         // What was the selected cell, we don't have that insight in this method, but we do in tableView didSelectRow At indexPath.
         // .indexPathForSelectedRow is an (optional) indexPath that will identify the current row that is selected. B/c optional, put it inside an if let statement.
         if let indexPath = tableView.indexPathForSelectedRow {
             // if not nil, then we are going to select destinationVC.selectedCategory from the ToDoListViewController. Before we wrote this if let statement, this property did not exsit. So, we need to create this property in the ToDoListViewController.
-            destinationVC.selectedCategory = categoryArray[indexPath.row]
+            destinationVC.selectedCategory = categories?[indexPath.row]
         }
     }
 
